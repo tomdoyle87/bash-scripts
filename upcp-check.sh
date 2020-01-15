@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 cd /var/cpanel/updatelogs # Change to cpanel updates logs directory.
 VAR1=$(ls -tr up*|tail -1) # Find the latest log and set it as a variable.
 egrep 'Error:|error:|Another app is currently holding the yum lock|Segmentation fault' $VAR1 > /tmp/update-check # Check for errors and output to temp file
