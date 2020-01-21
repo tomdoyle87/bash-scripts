@@ -20,21 +20,30 @@ esac
 echo 'Now setting up share for automounts'
 echo '/media/' $ip'(ro,sync,no_root_squash)' >> /etc/exports
 echo 'Share for automounts complete'
-read -p 'Do you wish to setup an additional shares e.g. /home/osmc/share (yes/no?): '
+while [ "$e" != "[nN]|[nN][oO])" ]; do
+read -p 'Do you wish to setup any additional shares e.g. /home/osmc/share (yes/no?): '
 case $REPLY in
         [yY]|[yY][eE][sS]) echo 'Please enter share path'
         read share
+		if [[ -z "$share" ]]; then
+			echo 'Please try again'
+				read share
+		fi
                 if [[ ! -e $share ]]; then
                         mkdir $share
                 fi
         echo $share $ip'(ro,sync,no_root_squash)' >> /etc/exports
+        unset share
         ;;
-                [nN]|[nN][oO]) echo 'No additional share to added.' ;;
+                [nN]|[nN][oO]) echo 'No additional share to added. Press Enter to continue...'
+		read e 
+		break;;
                         *) echo "Invalid argument" ;;
 esac
+done
 exportfs -ra
 echo "Listing Shares:"
 showmount -e 127.0.0.1
 echo "Server setup completed"
 unset ip
-unset share
+unset e9s
