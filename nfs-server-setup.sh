@@ -1,5 +1,5 @@
 #!/bin/bash
-read -p 'Do you want setup a NFS server?  (yes/no?): '
+read -p 'Do you want to setup an NFS server?  (yes/no?): '
 case $REPLY in
         [yY]|[yY][eE][sS]) echo 'Installing Server'
         apt-get install -y nfs-kernel-server
@@ -46,4 +46,4 @@ echo "Listing Shares:"
 showmount -e 127.0.0.1
 echo "Server setup completed"
 unset ip
-unset e9s
+unset e
