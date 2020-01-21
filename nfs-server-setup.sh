@@ -12,6 +12,10 @@ read -p 'Do you want Restrict what IPs can access the Server? (yes/no?): '
 case $REPLY in
         [yY]|[yY][eE][sS]) echo 'Please enter an IP network, for example 192.168.0.1/24. Or A single host, e.g. 192.168.1.15'
         read ip
+		if [[ -z "$ip" ]]; then
+			echo 'Please try again'
+				read ip
+		fi
         ;;
                 [nN]|[nN][oO]) echo 'Access will not be restricted'
                 ip='?' ;;
