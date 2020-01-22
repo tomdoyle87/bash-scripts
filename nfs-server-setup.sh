@@ -6,10 +6,13 @@ read_status () {
 			echo 'Please try again'
 			read st                                                                                                         
 		fi
-		if [[ ! $st =~ ^(ro|rw|)$ ]]; then 
+		while [ "$st" != "^(ro|rw|)$" ]; do
+			if [[ ! $st =~ ^(ro|rw|)$ ]]; then 
 			  echo "Please try again, needs to be ro or rw."
 			  read st
-		fi
+			fi
+			break
+		done	
 }
 read -p 'Do you want to setup an NFS server?  (yes/no?): '
 	case $REPLY in
