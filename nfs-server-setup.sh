@@ -14,6 +14,20 @@ read_status () {
 			break
 		done	
 }
+function validateIP() {
+         local ip=$1
+         local stat=1
+         if [[ $ip =~ ^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$) ]]; then
+                OIFS=$IFS
+                IFS='.'
+                ip=($ip)
+                IFS=$OIFS
+                [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+                && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+                stat=$?
+        fi
+        return $stat
+}
 read -p 'Do you want to setup an NFS server?  (yes/no?): '
 	case $REPLY in
 	[yY]|[yY][eE][sS]) echo 'Installing Server'
@@ -24,21 +38,23 @@ read -p 'Do you want to setup an NFS server?  (yes/no?): '
 	*) echo "Invalid argument" ;;
 esac
 read -p 'Do you want Restrict what IPs can access the Server? (yes/no?): '
-	case $REPLY in
-	[yY]|[yY][eE][sS]) echo 'Please enter an IP network, for example 192.168.0.1/24. Or A single host, e.g. 192.168.1.15'
-	read ip
-	if [[ -z "$ip" ]]; then
-		echo 'Please try again'
-		read ip
-	fi
-	if [[ ! $ip =~ ^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$) ]]; then
-		echo 'Please try again, not a valid ip or network'
-		read ip
-	fi
-	;;	
-	[nN]|[nN][oO]) echo 'Access will not be restricted'	
-	ip='?' ;;
-	*) echo "Invalid argument" ;;
+        case $REPLY in
+        [yY]|[yY][eE][sS]) echo 'Please enter an IP network, for example 192.168.0.1/24. Or A single host, e.g. 192.168.1.15'
+        read ip
+        while [[ -z "$ip" ]]; do
+                echo 'Please try again'
+                read ip
+        done
+        validateIP $ip
+        while [ $? -eq 1 ]; do
+                echo 'Please try again, not a valid ip or network'
+                read ip
+        validateIP $ip
+        done
+        ;;
+        [nN]|[nN][oO]) echo 'Access will not be restricted'
+        ip='?';;
+        *) echo "Invalid argument" ;;
 esac
 echo 'Now setting up share for automounts'
 read_status
