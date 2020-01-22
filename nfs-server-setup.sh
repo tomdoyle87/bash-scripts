@@ -58,30 +58,30 @@ read_status
 echo '/media/' $ip'('$st',sync,no_root_squash)' >> /etc/exports
 echo 'Share for automounts complete'
 while [ "$e" != "[nN]|[nN][oO])" ]; do
-	read -p 'Do you wish to setup any additional shares e.g. /home/osmc/share (yes/no?): '
-		case $REPLY in
-		[yY]|[yY][eE][sS]) echo 'Please enter share path'
-		read share
-		if [[ -z "$share" ]]; then
-			echo 'Please try again'
-			read share
-		fi
-		if [[ "$share" != /* ]]; then
-			echo 'Please try again, needs to be a absolute path'
-			read share
-		fi
-		if [[ ! -e $share ]]; then
-			mkdir $share
-		fi
-		read_status
-		echo $share $ip'('$st',sync,no_root_squash)' >> /etc/exports
-		unset share
-		;;
-		[nN]|[nN][oO]) echo 'No additional share to added. Press Enter to continue...'
-		read e
-		break;;
-		*) echo "Invalid argument" ;;
-	esac
+        read -p 'Do you wish to setup any additional shares e.g. /home/osmc/share (yes/no?): '
+                case $REPLY in
+                [yY]|[yY][eE][sS]) echo 'Please enter share path'
+                read share
+                while [[ -z "$share" ]]; do
+                        echo 'Please try again'
+                        read share
+                done
+                while [[ "$share" != /* ]]; do
+                        echo 'Please try again, needs to be a absolute path'
+                        read share
+                done
+                if [[ ! -e $share ]]; then
+                        mkdir $share
+                fi
+                read_status
+                echo $share $ip'('$st',sync,no_root_squash)' >> /etc/exports
+                unset share
+                ;;
+                [nN]|[nN][oO]) echo 'No additional share to added. Press Enter to continue...'
+                read e
+                break;;
+                *) echo "Invalid argument" ;;
+        esac
 done
 exportfs -ra
 echo "Listing Shares:"
