@@ -1,18 +1,15 @@
 #!/bin/bash
 read_status () {
-	echo 'Does the share need to be read only or read write (ro/rw):'
-	read st                                                                                                               
-		if [[ -z "$st" ]]; then
-			echo 'Please try again'
-			read st                                                                                                         
-		fi
-		while [ "$st" != "^(ro|rw|)$" ]; do
-			if [[ ! $st =~ ^(ro|rw|)$ ]]; then 
-			  echo "Please try again, needs to be ro or rw."
-			  read st
-			fi
-			break
-		done	
+        echo 'Does the share need to be read only or read write (ro/rw):'
+        read st
+                while [[ -z "$st" ]]; do
+                        echo 'Please try again'
+                        read st
+                done
+                while [ "$st" != "ro" ] && [ "$st" != "rw" ]; do
+                          echo "Please try again, needs to be ro or rw."
+                          read st
+                done
 }
 function validateIP() {
          local ip=$1
