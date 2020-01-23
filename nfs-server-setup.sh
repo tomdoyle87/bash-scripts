@@ -25,39 +25,44 @@ function validateIP() {
 	fi
 	return $stat
 }
-read -p 'Do you want to setup an NFS server?  (yes/no?): '
-	case $REPLY in
-	[yY]|[yY][eE][sS]) echo 'Installing Server'
-	apt-get install -y nfs-kernel-server
-	;;
-	[nN]|[nN][oO]) echo 'Exiting Setup'
-	exit 0 ;;
-	*) echo "Invalid argument" ;;
-esac
-read -p 'Do you want Restrict what IPs can access the Server? (yes/no?): '
-	case $REPLY in
-	[yY]|[yY][eE][sS]) echo 'Please enter an IP network, for example 192.168.0.1/24. Or A single host, e.g. 192.168.1.15'
-	read ip
-	while [[ -z "$ip" ]]; do
-	echo 'Please try again'
+while true; do
+	read -p 'Do you want to setup an NFS server?  (yes/no?): '
+		case $REPLY in
+		[yY]|[yY][eE][sS]) echo 'Installing Server'
+		apt-get install -y nfs-kernel-server
+		break;;
+		[nN]|[nN][oO]) echo 'Exiting Setup'
+		exit 0 ;;
+		*) echo "Invalid argument, please try again." ;;
+	esac
+done
+while  [ "$e" != "[nN]|[nN][oO])" ] && [ "$e" != "*" ]; do
+	read -p 'Do you want Restrict what IPs can access the Server? (yes/no?): '
+		case $REPLY in
+		[yY]|[yY][eE][sS]) echo 'Please enter an IP network, for example 192.168.0.1/24. Or A single host, e.g. 192.168.1.15'
 		read ip
-	done
-	validateIP $ip
-	while [ $? -eq 1 ]; do
-		echo 'Please try again, not a valid ip or network'
-		read ip
+		while [[ -z "$ip" ]]; do
+			echo 'Please try again'
+			read ip
+		done
 		validateIP $ip
-	done
-	;;
-	[nN]|[nN][oO]) echo 'Access will not be restricted'
-	ip='?';;
-	*) echo "Invalid argument" ;;
-esac
+		while [ $? -eq 1 ]; do
+			echo 'Please try again, not a valid ip or network'
+			read ip
+			validateIP $ip
+		done
+		break;;
+		[nN]|[nN][oO]) echo 'Access will not be restricted'
+		ip='?'
+		break;;
+		*) echo "Invalid argument, please try again." ;;
+	esac
+done
 echo 'Now setting up share for automounts'
 read_status
 echo '/media/' $ip'('$st',sync,no_root_squash)' >> /etc/exports
 echo 'Share for automounts complete'
-while [ "$e" != "[nN]|[nN][oO])" ]; do
+while  [ "$e" != "[nN]|[nN][oO])" ] && [ "$e" != "*" ]; do
 	read -p 'Do you wish to setup any additional shares e.g. /home/osmc/share (yes/no?): '
 		case $REPLY in
 		[yY]|[yY][eE][sS]) echo 'Please enter share path'
@@ -80,7 +85,7 @@ while [ "$e" != "[nN]|[nN][oO])" ]; do
 		[nN]|[nN][oO]) echo 'No additional share to added. Press Enter to continue...'
 		read e
 		break;;
-		*) echo "Invalid argument" ;;
+		*) echo "Invalid argument, please try again." ;;
 	esac
 done
 exportfs -ra
