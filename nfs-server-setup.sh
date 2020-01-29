@@ -1,97 +1,102 @@
-#!/bin/bash
-read_status () {
-	echo 'Does the share need to be read only or read write (ro/rw):'
-	read st
-	while [[ -z "$st" ]]; do
-        	echo 'Please try again'
-        	read st
-	done
-	while [ "$st" != "ro" ] && [ "$st" != "rw" ]; do
-		echo "Please try again, needs to be ro or rw."
-		read st
-	done
-}
-function validateIP() {
-	local ip=$1
-	local stat=1
-	if [[ $ip =~ ^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$) ]]; then
-		OIFS=$IFS
-		IFS='.'
-		ip=($ip)
-		IFS=$OIFS
-		[[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
-		&& ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
-		stat=$?
-	fi
-	return $stat
-}
-while true; do
-	read -p 'Do you want to setup an NFS server?  (yes/no?): '
-		case $REPLY in
-		[yY]|[yY][eE][sS]) echo 'Installing Server'
-		apt-get install -y nfs-kernel-server
-		break;;
-		[nN]|[nN][oO]) echo 'Exiting Setup'
-		exit 0 ;;
-		*) echo "Invalid argument, please try again." ;;
-	esac
-done
-while  [ "$e" != "[nN]|[nN][oO])" ] && [ "$e" != "*" ]; do
-	read -p 'Do you want Restrict what IPs can access the Server? (yes/no?): '
-		case $REPLY in
-		[yY]|[yY][eE][sS]) echo 'Please enter an IP network, for example 192.168.0.1/24. Or A single host, e.g. 192.168.1.15'
-		read ip
-		while [[ -z "$ip" ]]; do
-			echo 'Please try again'
-			read ip
-		done
-		validateIP $ip
-		while [ $? -eq 1 ]; do
-			echo 'Please try again, not a valid ip or network'
-			read ip
-			validateIP $ip
-		done
-		break;;
-		[nN]|[nN][oO]) echo 'Access will not be restricted'
-		ip='?'
-		break;;
-		*) echo "Invalid argument, please try again." ;;
-	esac
-done
-echo 'Now setting up share for automounts'
-read_status
-echo '/media/' $ip'('$st',sync,no_root_squash)' >> /etc/exports
-echo 'Share for automounts complete'
-while  [ "$e" != "[nN]|[nN][oO])" ] && [ "$e" != "*" ]; do
-	read -p 'Do you wish to setup any additional shares e.g. /home/osmc/share (yes/no?): '
-		case $REPLY in
-		[yY]|[yY][eE][sS]) echo 'Please enter share path'
-		read share
-		while [[ -z "$share" ]]; do
-			echo 'Please try again'
-			read share
-		done
-		while [[ "$share" != /* ]]; do
-			echo 'Please try again, needs to be a absolute path'
-			read share
-		done
-		if [[ ! -e $share ]]; then
-			mkdir $share
-		fi
-		read_status
-		echo $share $ip'('$st',sync,no_root_squash)' >> /etc/exports
-		unset share
-		;;
-		[nN]|[nN][oO]) echo 'No additional share to added. Press Enter to continue...'
-		read e
-		break;;
-		*) echo "Invalid argument, please try again." ;;
-	esac
-done
-exportfs -ra
-echo "Listing Shares:"
-showmount -e 127.0.0.1
-echo "Server setup completed"
-unset ip
-unset e
-unset st
+#!/usr/bin/python3
+import sys
+import re
+import os
+
+## Function to validate read status of share.
+def read():
+    global st
+    st = ' '
+    while st != 'ro' or st != 'rw':
+        st = input("Does the share need to be read only or read write (ro/rw):")
+        if st == 'ro' or st == 'rw':
+            break
+        else:
+            print("Invalid input, please try again?.")
+## IP Validation regex. 
+regex = "^(?=\d+\.\d+\.\d+\.\d+($|\/))(([1-9]?\d|1\d\d|2[0-4]\d|25[0-5])\.?){4}(\/([0-9]|[1-2][0-9]|3[0-2]))?$"
+
+## Function to validate IPs and networks.
+def check(Ip):  
+  
+    global ip
+    if(re.search(regex, Ip)):  
+        print("Valid Ip address")  
+        ip = '1'  
+    else:  
+        print("Invalid Ip address, please try again")
+        ip ='0'
+
+## Function to validate yes no input.
+def yes_or_no(question):
+    global reply
+    answer = input(question + "(yes/no): ").lower().strip()
+    print("")
+    while not(answer == "y" or answer == "yes" or \
+    answer == "n" or answer == "no"):
+        print("Input yes or no")
+        answer = input(question + "(yes/no):").lower().strip()
+        print("")
+    if answer[0] == "y":
+        return True
+        reply = '1'
+    if answer[0] == "n":
+        reply = '0'
+    else:
+        return False
+
+## Function to install NFS server
+def install_server():  
+    os.system('sudo apt-get update' and 'sudo apt-get install -y nfs-kernel-server')
+
+reply = ' '
+question = yes_or_no("Do you want to setup an NFS server? ")
+if reply == '0':
+   print("Exiting Setup")
+   sys.exit()
+
+ip = ' '
+print("Installing Server")
+install_server()
+reply = ' '
+question = yes_or_no("Do you want Restrict what IPs can access the Server? ")
+if reply != '0':
+    while ip !='1':
+         Ip = input ("Please enter an IP network, for example 192.168.0.1/24. Or A single host, e.g. 192.168.1.15 ")
+         check(Ip)
+         if ip == '1':
+             break
+         if ip == '0':
+             continue
+
+if reply == '0':
+    print("Not restricting IP")
+    Ip = '?'
+
+print("Now setting up share for automounts")
+read()
+print('/media/ ' + Ip + '(' + st + ',sync,no_root_squash)', file=open("/etc/exports", "a"))
+print("Share for automounts complete")
+
+reply = ' '
+while reply != '0':
+    question = yes_or_no("Do you wish to setup any additional shares e.g. /home/osmc/share ")
+    if reply != '0':
+        share = input("Please enter share path? ")
+        while not os.path.isabs(share):
+            share = input("Please try again, needs to be a absolute path ")
+            os.path.isabs(share)
+        if not os.path.exists(share):
+             os.makedirs(share)
+        read()
+        print(share,Ip + '(' + st + ',sync,no_root_squash)', file=open("/etc/exports", "a"))
+    if reply == '0':
+        print ("No additional share to added")
+        break
+
+exportfs = '/usr/sbin/exportfs -ra'
+os.system(exportfs)
+print("Listing Shares: ")
+showmount = '/sbin/showmount -e 127.0.0.1'
+os.system(showmount)
+print("Server setup completed")
