@@ -1,0 +1,32 @@
+#!/bin/bash
+
+linenumber=1
+
+until [ $linenumber -gt 5 ]
+do
+  #Set Variables
+  domain=$(awk -F, -v r=$linenumber -v c=1 '{if(NR==r)print $c}' domains.csv)
+  userfolder=$(awk -F, -v r=$linenumber -v c=2 '{if(NR==r)print $c}' domains.csv)
+  fname=$(date +%F)
+
+  #Change to customer company details
+  country=GB
+  state=Bucks
+  locality=MK
+  organization=Tomsdomainco
+  email=admin@$domain
+
+  #Create the request
+  echo "Creating CSR for "$domain
+  openssl req -new -newkey rsa:2048 -nodes -keyout $domain.key -out $domain.csr \
+              -subj "/C=$country/ST=$state/L=$locality/O=$organization/CN=$domain/emailAddress=$email"
+
+  #Save Private key
+  key="$(cat $domain.key|perl -MURI::Escape -ne 'print uri_escape($_);' )"
+  uapi --user=$userfolder SSL upload_key key=$key friendly_name=$fname
+  chmod 640 $domain.key
+  mv $domain.key /home/$userfolder/ssl/keys/
+  ((linenumber++))
+done
+zip CSRs.zip *.csr
+rm -f *.csr

@@ -1,0 +1,53 @@
+#!/bin/bash
+set -f
+
+#Set Variables
+domain=$(whiptail --inputbox "Please enter the domain, for the CSR:" 8 39 --title "Domain Name" 3>&1 1>&2 2>&3) 
+userfolder=$(whiptail --inputbox "Please enter the CPANEL Username, for the previously entered domain:" 8 39 --title "username" 3>&1 1>&2 2>&3)
+fname=$(date +%F)
+#Send_CSR_To=TECH@example.co.uk
+Send_CSR_To=$(whiptail --inputbox "Please enter the email address, to send the CSR to (If left blank will default to TECH@example.co.uk): " 8 65 --title "sendcsrto" 3>&1 1>&2 2>&3)
+if [ -z "$Send_CSR_To" ];
+then
+        Send_CSR_To=TECH@example.co.uk
+        echo "Using default email: " $Send_CSR_To
+else
+        echo "Using requested email: " $Send_CSR_To
+fi
+
+#Change to customer company details
+country=$(whiptail --inputbox "Please enter the 2 letter country code, for CSR:" 8 39 --title "country" 3>&1 1>&2 2>&3)
+state=$(whiptail --inputbox "Please enter the State, for CSR:" 8 39 --title "state" 3>&1 1>&2 2>&3)
+locality=$(whiptail --inputbox "Please enter the Locality, for CSR:" 8 39 --title "locality" 3>&1 1>&2 2>&3)
+organization=$(whiptail --inputbox "Please enter the Organization, for CSR:" 8 39 --title "organization" 3>&1 1>&2 2>&3)
+organizationalunit=$(whiptail --inputbox "Please enter the Organization Unit, for CSR:" 8 39 --title "organizationalunit" 3>&1 1>&2 2>&3)
+email=$(whiptail --inputbox "Please enter the email address, for CSR (If left blank will default to admin@thedomain): " 8 50 --title "email" 3>&1 1>&2 2>&3)
+if [ -z "$email" ];
+then
+	email=admin@$domain
+	echo "Using default email: " $email
+else
+	echo "Using requested email: " $email
+fi
+
+#Create the request
+echo "Creating CSR for "$domain
+openssl req -new -newkey rsa:2048 -nodes -keyout $domain.key -out $domain.csr \
+-subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$domain/emailAddress=$email"
+
+#Save Private key
+key="$(cat $domain.key|perl -MURI::Escape -ne 'print uri_escape($_);' )"
+uapi --user=$userfolder SSL upload_key key=$key friendly_name=$fname
+rm -f $domain.key
+/bin/mail -s "$(echo -e "CSR for $domain")" < $domain.csr $Send_CSR_To
+echo "CSR key for "$domain: ; echo " " ; cat $domain.csr
+echo " "
+whiptail --msgbox "CSR for "$domain", has been to sent to "$Send_CSR_To"" 8 60  3>&1 1>&2 2>&3
+rm -f $domain.csr
+set +f
+if (whiptail --title "Another CSR?" --yesno "Do you need to generate another CSR?" 8 78); then
+    . /home/gen-csr-without-san-v2
+else
+    whiptail --msgbox "             ""Goodbye" 7 39 3>&1 1>&2 2>&3
+    rm -f /home/gen-csr-without-san-v2
+fi

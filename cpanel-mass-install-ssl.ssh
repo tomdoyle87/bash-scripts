@@ -1,0 +1,16 @@
+#!/bin/bash
+
+linenumber=1
+
+until [ $linenumber -gt 3 ]
+do
+  #Set Variables
+  domain=$(awk -F, -v r=$linenumber -v c=1 '{if(NR==r)print $c}' domains.csv)
+  userfolder=$(awk -F, -v r=$linenumber -v c=2 '{if(NR==r)print $c}' domains.csv)
+  crt="$(cat $domain.crt|perl -MURI::Escape -ne 'print uri_escape($_);' )"
+  key="$(cat /home/$userfolder/ssl/keys/$domain.key|perl -MURI::Escape -ne 'print uri_escape($_);' )"
+
+  echo "Install SSL for "$domain
+  whmapi1 installssl domain=$domain crt=$crt key=$key
+  ((linenumber++))
+done
