@@ -5,14 +5,14 @@ set -f
 domain=$(whiptail --inputbox "Please enter the domain, for the CSR:" 8 39 --title "Domain Name" 3>&1 1>&2 2>&3)
 userfolder=$(whiptail --inputbox "Please enter the CPANEL Username, for the previously entered domain:" 8 39 --title "username" 3>&1 1>&2 2>&3)
 fname=$(date +%F)
-#Send_CSR_To=TECH@example.co.uk
-Send_CSR_To=$(whiptail --inputbox "Please enter the email address, to send the CSR to (If left blank will default to TECH@example.co.uk): " 8 65 --title "sendcsrto" 3>&1 1>&2 2>&3)
+#Send_CSR_To=root
+Send_CSR_To=$(whiptail --inputbox "Please enter the email address, to send the CSR to (If left blank will default to root): " 8 65 --title "sendcsrto" 3>&1 1>&2 2>&3)
 if [ -z "$Send_CSR_To" ];
 then
-        Send_CSR_To=TECH@example.co.uk
+        Send_CSR_To=root
         echo "Using default email: " $Send_CSR_To
 else
-        echo "Using requested email: " $Send_CSR_To=
+        echo "Using requested email: " $Send_CSR_To
 fi
 
 #Change to customer company details
