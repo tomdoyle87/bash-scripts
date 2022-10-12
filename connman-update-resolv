@@ -60,7 +60,7 @@ cp -af /etc/resolv.conf /dev/shm/
   then
 	echo "no dns server's pushed"
   else
-  	connmanctl config ethernet_c44eac0a9439_cable --nameservers $R
+  	connmanctl config ethernet_xxxxxxxxxxxxx_cable --nameservers $R
   fi
     if [ -z "$S" ];                                               
   then                                                          
