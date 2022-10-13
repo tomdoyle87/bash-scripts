@@ -14,7 +14,7 @@ Suggest copying script to /usr/local/sbin/ and sceduling a cronjob to run about 
 
 A setup script for osmc nfs-server including automounts. Needs work as only allows one (non automounted additional share), also only inital setup no reconfigure. To run:
 
-   sudo bash nfs-server-setup.sh
+    sudo bash nfs-server-setup.sh
 
 <h2> cpanel-mass-generate-csr.ssh & cpanel-mass-install-ssl.ssh </h2>
 
