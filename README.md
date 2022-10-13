@@ -21,3 +21,20 @@ sudo bash nfs-server-setup.sh
 Both require a csv spreadheet called domains.csv, 1st column domain, 2nd username. For the csr generation if company details are not constant, add columns to csv file and use awk to generate variables. For example if country is the third, add as a variable like this:
 
 country=$(awk -F, -v r=$linenumber -v c=3 '{if(NR==r)print $c}' domains.csv)
+
+<h2>connman-update-resolv</h2>
+Allows OpenVPN users to use the dns servers from their VPN provider, with no requirement for resolvconf or openresolv. To use:
+
+    cd /etc/openvpn
+    sudo wget https://raw.githubusercontent.com/tomdoyle87/bash-scripts/main/connman-update-resolv
+    sudo chmod u+x connman-update-resolv
+    
+Replace **ethernet_xxxxxxxxxxxxx_cable** in connman-update-resolv with your actual connection, you can find this with:
+    
+    connmanctl services
+
+Append the following to your vpn conf file:
+    
+    script-security 2                                               
+    up /etc/openvpn/connman-update-resolv 
+    down /etc/openvpn/connman-update-resolv
