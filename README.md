@@ -1,4 +1,4 @@
-<h2>bash-scripts</h1>
+<h1>bash-scripts</h1>
 
 A little repository for what I hope are useful bash scripts
 
@@ -38,3 +38,6 @@ Append the following to your vpn conf file:
     script-security 2                                               
     up /etc/openvpn/connman-update-resolv 
     down /etc/openvpn/connman-update-resolv
+
+<h2>UpdateChromium.ps1</h2>
+Not a bash script, just a powershell script I put together with AI. For my office PC. Kept forgetting to manaully update. Can be run using a scheduled task. 
