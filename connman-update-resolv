@@ -27,48 +27,68 @@ export PATH=$PATH:/sbin:/usr/sbin:/bin:/usr/bin
 case $script_type in
 
 up)
-cp -af /etc/resolv.conf /dev/shm/
-  for optionname in ${!foreign_option_*} ; do
-    option="${!optionname}"
-    echo $option
-    part1=$(echo "$option" | cut -d " " -f 1)
-    if [ "$part1" == "dhcp-option" ] ; then
-      part2=$(echo "$option" | cut -d " " -f 2)
-      part3=$(echo "$option" | cut -d " " -f 3)
-      if [ "$part2" == "DNS" ] ; then
-        IF_DNS_NAMESERVERS="$IF_DNS_NAMESERVERS $part3"
-      fi
-      if [[ "$part2" == "DOMAIN" || "$part2" == "DOMAIN-SEARCH" ]] ; then
-        IF_DNS_SEARCH="$IF_DNS_SEARCH $part3"
-      fi
-    fi
-  done
-  R=""
-  S=""
-  if [ "$IF_DNS_SEARCH" ]; then
-    S="search "
-    for DS in $IF_DNS_SEARCH ; do
-      S="${R} $DS"
-    done
-  S="${S}"
-  fi
+# lets create a clean resolv.conf backup, as down works inconsistently on host shutdown and reboots. If host upstream dns servers are changed please remove /etc/resolv.conf.connman-backup, so it can be replaced. 
+if [ ! -f /etc/resolv.conf.connman-backup ]; then
+    cp -af /etc/resolv.conf /etc/resolv.conf.connman-backup
+fi
 
-  for NS in $IF_DNS_NAMESERVERS ; do
-    R="${R}nameserver $NS"
-  done
-  if [ -z "$R" ];
-  then
-	echo "no dns server's pushed"
-  else
-  	connmanctl config ethernet_xxxxxxxxxxxxx_cable --nameservers $R
-  fi
-    if [ -z "$S" ];                                               
-  then                                                          
-        echo "no domain pushed"                           
-  else                                                                           
-        echo $S >> /etc/resolv.conf           
-  fi       
-  ;;
+cp -af /etc/resolv.conf /dev/shm/ #backup of resolv.conf so can be restored on service restarts
+
+# -----------------------
+# Parse OpenVPN pushed options
+# -----------------------
+for optionname in ${!foreign_option_*}; do
+    option="${!optionname}"
+
+    part1=$(echo "$option" | cut -d " " -f 1)
+
+    if [ "$part1" = "dhcp-option" ]; then
+        part2=$(echo "$option" | cut -d " " -f 2)
+        part3=$(echo "$option" | cut -d " " -f 3)
+
+        if [ "$part2" = "DNS" ]; then
+            IF_DNS_NAMESERVERS="$IF_DNS_NAMESERVERS $part3"
+        fi
+
+        if [ "$part2" = "DOMAIN" ] || [ "$part2" = "DOMAIN-SEARCH" ]; then
+            IF_DNS_SEARCH="$IF_DNS_SEARCH $part3"
+        fi
+    fi
+done
+
+
+# -----------------------
+# Build ConnMan DNS string
+# -----------------------
+R=""
+for NS in $IF_DNS_NAMESERVERS; do
+    R="$R $NS"
+done
+R=$(echo "$R" | sed 's/^ *//')
+
+IFACE=$(connmanctl services | awk '/\*AR Wired/ {print $NF}')
+
+# -----------------------
+# Push DNS to ConnMan
+# -----------------------
+if [ -n "$R" ]; then
+    connmanctl config "$IFACE" --nameservers $R
+else
+    echo "no dns server's pushed"
+fi
+
+# -----------------------
+# Handle search domains
+# -----------------------
+if [ -n "$IF_DNS_SEARCH" ]; then
+    S="search $IF_DNS_SEARCH"
+    printf "%s\n" "$S" > /etc/resolv.conf
+    echo "domain pushed from VPN: $IF_DNS_SEARCH"
+else
+    echo "no domain pushed from VPN"
+fi
+
+;;
 down)
   mv /dev/shm/resolv.conf /etc/
   ;;
