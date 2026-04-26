@@ -39,5 +39,15 @@ Append the following to your vpn conf file:
     up /etc/openvpn/connman-update-resolv 
     down /etc/openvpn/connman-update-resolv
 
+Update connman preferences not to use dnsproxy. Edit ```/etc/osmc/prefs.d/connman```:
+
+Replace:
+
+    dnsproxy=yes
+With:
+    
+    dnsproxy=no
+Then restart connman with ```sudo systemctl restart connman```
+
 <h2>UpdateChromium.ps1</h2>
 Not a bash script, just a powershell script I put together with AI. For my office PC. Kept forgetting to manaully update. Can be run using a scheduled task. 
