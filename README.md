@@ -29,10 +29,6 @@ Allows OpenVPN users to use the dns servers from their VPN provider, with no req
     sudo wget https://raw.githubusercontent.com/tomdoyle87/bash-scripts/main/connman-update-resolv
     sudo chmod u+x connman-update-resolv
     
-Replace **ethernet_xxxxxxxxxxxxx_cable** in connman-update-resolv with your actual connection, you can find this with:
-    
-    connmanctl services
-
 Append the following to your vpn conf file:
     
     script-security 2                                               
@@ -48,6 +44,11 @@ With:
     
     dnsproxy=no
 Then restart connman with ```sudo systemctl restart connman```
+
+To make sure this works consistently across shutdowns and reboots with systemd an override is requried:-
+
+    [Service]
+    ExecStartPre=-/bin/cp /etc/resolv.conf.connman-backup /etc/resolv.conf
 
 <h2>UpdateChromium.ps1</h2>
 Not a bash script, just a powershell script I put together with AI. For my office PC. Kept forgetting to manaully update. Can be run using a scheduled task. 
