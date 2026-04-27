@@ -2,8 +2,8 @@
 #
 # Parses DHCP options from openvpn to update resolv.conf
 # To use set as 'up' and 'down' script in your openvpn *.conf:
-# up /etc/openvpn/update-resolv-conf
-# down /etc/openvpn/update-resolv-conf
+# up /etc/openvpn/connman-update-resolv
+# down /etc/openvpn/connman-update-resolv
 #
 # Used snippets of resolvconf script by Thomas Hood <jdthood@yahoo.co.uk>
 # and Chris Hanson
@@ -27,12 +27,22 @@ export PATH=$PATH:/sbin:/usr/sbin:/bin:/usr/bin
 case $script_type in
 
 up)
-# lets create a clean resolv.conf backup, as down works inconsistently on host shutdown and reboots. If host upstream dns servers are changed please remove /etc/resolv.conf.connman-backup, so it can be replaced. 
-if [ ! -f /etc/resolv.conf.connman-backup ]; then
-    cp -af /etc/resolv.conf /etc/resolv.conf.connman-backup
-fi
+#------------------------
+# Store Pre-vpn DNS
+#------------------------
+IFACE=$(connmanctl services | awk '/^\*/ {print $NF; exit}')
 
-cp -af /etc/resolv.conf /dev/shm/ #backup of resolv.conf so can be restored on service restarts
+# Capture only once per VPN session
+if [ ! -f /etc/resolv.conf.connman-backup ]; then
+    PRE_VPN_DNS=$(connmanctl services "$IFACE" \
+        | sed -n 's/.*Nameservers\.Configuration = \[\(.*\)\].*/\1/p' \
+        | tr -d ',' \
+        | xargs)
+
+    if [ -n "$PRE_VPN_DNS" ]; then
+        echo "$PRE_VPN_DNS" > /etc/resolv.conf.connman-backup
+    fi
+fi
 
 # -----------------------
 # Parse OpenVPN pushed options
@@ -66,8 +76,6 @@ for NS in $IF_DNS_NAMESERVERS; do
 done
 R=$(echo "$R" | sed 's/^ *//')
 
-IFACE=$(connmanctl services | awk '/^\*/ {print $NF; exit}')
-
 # -----------------------
 # Push DNS to ConnMan
 # -----------------------
@@ -77,20 +85,17 @@ else
     echo "no dns server's pushed"
 fi
 
-# -----------------------
-# Handle search domains
-# -----------------------
-if [ -n "$IF_DNS_SEARCH" ]; then
-    S="search $IF_DNS_SEARCH"
-    printf "%s\n" "$S" > /etc/resolv.conf
-    echo "domain pushed from VPN: $IF_DNS_SEARCH"
-else
-    echo "no domain pushed from VPN"
-fi
-
 ;;
 down)
-  mv /dev/shm/resolv.conf /etc/
-  ;;
+IFACE=$(connmanctl services | awk '/^\*/ {print $NF; exit}')
+
+if [ -f /etc/resolv.conf.connman-backup ]; then
+    PRE_VPN_DNS=$(cat /etc/resolv.conf.connman-backup)
+
+    if [ -n "$PRE_VPN_DNS" ] && [ -n "$IFACE" ]; then
+        connmanctl config "$IFACE" --nameservers $PRE_VPN_DNS
+    fi
+fi
+;;
 esac
 exit 0
