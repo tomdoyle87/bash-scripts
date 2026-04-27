@@ -35,7 +35,7 @@ Append the following to your vpn conf file:
     up /etc/openvpn/connman-update-resolv 
     down /etc/openvpn/connman-update-resolv
 
-Update connman preferences not to use dnsproxy. Edit ```/etc/osmc/prefs.d/connman```:
+Update connman preferences not to use dnsproxy. Edit ```/etc/osmc/prefs.d/connman``` (should still work work with dnsproxy enabled, but not tested):
 
 Replace:
 
@@ -47,8 +47,21 @@ Then restart connman with ```sudo systemctl restart connman```
 
 To make sure this works consistently across shutdowns and reboots with systemd an override is requried:-
 
+    
     [Service]
-    ExecStartPre=-/bin/cp /etc/resolv.conf.connman-backup /etc/resolv.conf
+    ExecStartPre=/bin/sh -c "IFACE=$(connmanctl services | sed -n \"s/^\\*.* \\([^ ]*\\)$/\\1/p\"); if [ -n \"$IFACE\" ] && [ -f /etc/openvpn/pre-vpn-dns ]; then PRE_VPN_DNS=$(cat /etc/openvpn/pre-vpn-dns); connmanctl config \"$IFACE\" --nameservers $PRE_VPN_DNS; fi"
+
+We also need to start openvpn from a stopped state when these scripts are first added and that connman currently has your actual nameservers rather than the vpn provided ones configured. One way to check this is:-
+
+
+    IFACE=$(connmanctl services | awk '/^\*/ {print $NF; exit}')
+    connmanctl services "$IFACE" \
+        | sed -n 's/.*Nameservers\.Configuration = \[\(.*\)\].*/\1/p' \
+        | tr -d ',' \
+        | xargs
+
+If you ever change your locally configured nameservers you need to remove /etc/resolv.conf.connman-backup and repeat the above. 
+    
 
 <h2>UpdateChromium.ps1</h2>
 Not a bash script, just a powershell script I put together with AI. For my office PC. Kept forgetting to manaully update. Can be run using a scheduled task. 
