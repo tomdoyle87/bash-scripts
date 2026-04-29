@@ -45,7 +45,7 @@ With:
     dnsproxy=no
 Then restart connman with ```sudo systemctl restart connman```
 
-To make sure this works consistently across shutdowns and reboots with systemd an override is requried:-
+(Optional. If you find the down script is not restoring the pre-vpn dns, this fall-back resolves this issue). To make sure this works consistently across shutdowns and reboots with systemd an override is requried:-
 
     
     [Service]
